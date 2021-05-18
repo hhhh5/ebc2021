@@ -34,7 +34,7 @@ prop <- (sum(eigenvalue[1:npc])/sum(eigenvalue)) * 100
 cat("Top ", npc, " principal components can explain ", 
     prop, "% of data \n    variation", "\n")
 screeplot(svd,npc,type="barplot")
-pcrplot(na.omit(betas.clean), cov, npc=10) # Already saved in working directory
+#pcrplot(na.omit(betas.clean), cov, npc=10) # Already saved in working directory
 
 
 #'# Epigenetic Age
@@ -69,3 +69,22 @@ wilcox.test(DNAmAge ~ pheno$smoker)
 boxplot(DNAmAge.Hannum ~pheno$smoker, col=c("blue","red"))
 wilcox.test(DNAmAge.Hannum ~ pheno$smoker)
 
+#' Load Age Acceleration measures
+#' See  [Horvath New Methylation Age Calculator](http://dnamage.genetics.ucla.edu/).  
+Online<-read.csv("Clock/datout_New.output.csv")
+pairs(~DNAmAge + DNAmPhenoAge + DNAmAgeSkinBloodClock + DNAmGrimAge +DNAmTL+DNAmAgeHannum, data = Online)
+
+#' Look at GrimAge Acceleration
+Online<- Online[match(pheno$gsm, Online$SampleID),]
+boxplot(Online$DNAmGrimAgeAdjAge ~pheno$smoker, col=c("blue","red"))
+wilcox.test(Online$DNAmGrimAgeAdjAge ~ pheno$smoker)
+
+#' Pack years predicted from DNA methylation
+boxplot(Online$DNAmPACKYRS ~pheno$smoker, col=c("blue","red"))
+wilcox.test(Online$DNAmPACKYRS ~ pheno$smoker)
+
+#' DNA methylation estimate of TL
+boxplot(Online$DNAmTLAdjAge ~pheno$smoker, col=c("blue","red"))
+t.test(Online$DNAmTLAdjAge ~ pheno$smoker)
+
+#' End of script 03
