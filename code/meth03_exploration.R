@@ -4,8 +4,10 @@ suppressMessages(library(limma))
 suppressMessages(library(ENmix))
 options(warn=0)
 
-#' Load the data
-load("data/processed.rda")
+
+#+ setdir01, echo = F
+knitr::opts_knit$set(root.dir = "../")
+load("../data/processed.rda")
 
 #'# Exploring global DNA Methylation variability via PCs
 # Let's look at the effect of sex
@@ -39,7 +41,9 @@ pcrplot(na.omit(betas.clean), cov, npc=10) # Already saved in working directory
 
 #'# Epigenetic Age
 #'Load package for Age-Prediction
-library(wateRmelon)
+options(warn=-1)
+suppressMessages(library(wateRmelon))
+options(warn=0)
 DNAmAge<-as.vector(agep(beta))
 hist(DNAmAge)
 boxplot(DNAmAge);stripchart(DNAmAge, vertical = T,method = "jitter", add = T, pch = 20, col = 'red')
@@ -72,10 +76,19 @@ wilcox.test(DNAmAge.Hannum ~ pheno$smoker)
 #' Load Age Acceleration measures
 #' See  [Horvath New Methylation Age Calculator](http://dnamage.genetics.ucla.edu/).  
 Online<-read.csv("Clock/datout_New.output.csv")
-pairs(~DNAmAge + DNAmPhenoAge + DNAmAgeSkinBloodClock + DNAmGrimAge +DNAmTL+DNAmAgeHannum, data = Online)
+Online<- Online[match(pheno$gsm, Online$SampleID),]
+#+ fig.width=8, fig.height=6, dpi=300
+group <- NA
+group[pheno$smoker=="smoker"] <- 1
+group[pheno$smoker=="non-smoker"] <- 2
+pairs(~DNAmAge + DNAmPhenoAge + DNAmAgeSkinBloodClock + 
+    DNAmGrimAge + DNAmTL + DNAmAgeHannum, 
+    col = c("red","blue")[group],
+    pch = c(8, 18)[group], 
+    data = Online)
+
 
 #' Look at GrimAge Acceleration
-Online<- Online[match(pheno$gsm, Online$SampleID),]
 boxplot(Online$DNAmGrimAgeAdjAge ~pheno$smoker, col=c("blue","red"))
 wilcox.test(Online$DNAmGrimAgeAdjAge ~ pheno$smoker)
 
