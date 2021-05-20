@@ -1,6 +1,6 @@
 #'# Regional DNA methylation analysis using DMRcate and bumphunter  
 #' Using data preprocessed in our script:  
-#'  meth01_process_data.R
+#' meth01_process_data.R
 
 options(warn=-1)
 suppressMessages(library(data.table))
@@ -31,8 +31,53 @@ Annot.Tops<-Annot.Tops[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_
 Top<-cbind(Top[,1:5], Annot.Tops)
 
 #' Order by chr and chromosomal position
-Top[order(Top$chr,Top$pos),c(1,6,7,8,9)]
+Top$chr = as.numeric(gsub("chr", "", Top$chr))
+Top[order(Top$chr,Top$pos),c(1,6,7,8,9,10)] 
 
+#' Use of M-values reduces heteroscedasticity to meet linear model assumptions, see [Du P, et al. BMC Bioinformatics. 2010](https://pubmed.ncbi.nlm.nih.gov/21118553/). 
+
+
+#'# Introduction to differential variability analysis
+#' see [Phipson and Oshlack. Genome Biol 2014](https://pubmed.ncbi.nlm.nih.gov/25245051/). 
+suppressMessages(library(missMethyl))
+suppressMessages(library(ChAMP))
+
+#' Impute missing Beta-values (varFit will produce an error with missingness)
+sum(is.na(betas.clean))
+betas.impute = champ.impute(beta=betas.clean, pd=pheno, k=5, ProbeCutoff=0.2, SampleCutoff=0.1)
+betas.impute = betas.impute$beta
+
+#' coef parameter in varFit states which columns of design matrix correspond to the intercept and variable of interest
+#' If Beta-values are used, a lofit transformation is performed within the varFit function
+head(model)
+EWAS.diffVar <- varFit(betas.impute, design=model, coef=c(1,2))
+Top.diffVar <- topVar(EWAS.diffVar, coef=2, number=10, sort =TRUE)
+Top.diffVar
+
+#' Bind results with annotation
+Annot.Top.diffVar<- Annot[match(rownames(Top.diffVar),Annot$Name),]
+Annot.Top.diffVar<-Annot.Top.diffVar[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_Island","chr","pos")]
+Top.diffVar<-cbind(Top.diffVar, Annot.Top.diffVar)
+
+#' Order by chr and chromosomal position
+Top.diffVar$chr = as.numeric(gsub("chr", "", Top.diffVar$chr))
+Top.diffVar[,c(2,6)] = round(Top.diffVar[,c(2,6)],2)
+Top.diffVar[order(Top.diffVar$chr, Top.diffVar$pos),c(2,5,6,7,10,11)]
+
+#' Although no CpGs meet FDR significance, we can see differences in variability among the top sites
+cpg1 = data.frame(id = colnames(betas.impute), beta = betas.impute[rownames(betas.impute) == 'cg19754622',])
+cpg1 = merge(cpg1, pheno[,c('gsm', 'smoker')], by.x = 'id', by.y = 'gsm') 
+cpg1$smoker = as.numeric(factor(cpg1$smoker))
+
+cpg2 = data.frame(id = colnames(betas.impute), beta = betas.impute[rownames(betas.impute) == 'cg21173402',])
+cpg2 = merge(cpg2, pheno[,c('gsm', 'smoker')], by.x = 'id', by.y = 'gsm') 
+cpg2$smoker = as.numeric(factor(cpg2$smoker))
+
+boxplot(cpg1$beta ~ cpg1$smoker, col = c("blue", "red"), outline = F, xlab = 'smoking', ylab = 'Beta-value', names = c("non-smoker", "smoker"));points(jitter(cpg1$smoker, amount = 0.1), cpg1$beta, pch = 16)
+
+boxplot(cpg2$beta ~ cpg2$smoker, col = c("blue", "red"), outline = F, xlab = 'smoking', ylab = 'Beta-value', names = c("non-smoker", "smoker"));points(jitter(cpg1$smoker, amount = 0.1), cpg2$beta, pch = 16)
+
+#' diffVar results may be influenced by outliers
 
 
 #' Load package for regional analysis "DMRcate"
