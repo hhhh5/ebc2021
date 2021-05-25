@@ -30,8 +30,7 @@ if(length(toinstallBioC >= 1)) {
   cat("finished installing new packages from BioConductor\n")
 } else cat("packages we need from BioConductor are already installed\n")
 
-# TODO: create v1.7 release/tag 
-devtools::install_github("hhhh5/ewastools")
+devtools::install_github("hhhh5/ewastools@ebc2021")
 devtools::install_github("sailalithabollepalli/EpiSmokEr",type = "source") # not on CRAN
 
 #' check that we were successful
