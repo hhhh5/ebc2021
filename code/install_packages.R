@@ -1,3 +1,7 @@
+# default drive for package installation is too small
+dir.create('.Rpackages')
+.libPaths( c('.Rpackages',.libPaths() ) )
+
 fromCRAN <- c(
    "Rcpp","openssl","CpGassoc", "rmarkdown"
   ,"knitr", "matrixStats","reshape","glmnet"
