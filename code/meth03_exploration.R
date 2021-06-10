@@ -7,7 +7,7 @@ options(warn=0)
 
 #+ setdir01, echo = F
 knitr::opts_knit$set(root.dir = "../")
-load("../data/processed.rda")
+load("data/processed.rda")
 
 #'# Exploring global DNA Methylation variability via PCs
 # Let's look at the effect of sex
