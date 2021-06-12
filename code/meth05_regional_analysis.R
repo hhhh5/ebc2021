@@ -1,4 +1,4 @@
-#'# Regional DNA methylation analysis using DMRcate and bumphunter  
+#'# Regional DNA methylation analysis using DMRcate
 #' Using data preprocessed in our script:  
 #' meth01_process_data.R
 
@@ -35,7 +35,7 @@ Top$chr = as.numeric(gsub("chr", "", Top$chr))
 Top[order(Top$chr,Top$pos),c(1,6,7,8,9,10)] 
 
 #' Use of M-values reduces heteroscedasticity to meet linear model assumptions, see [Du P, et al. BMC Bioinformatics. 2010](https://pubmed.ncbi.nlm.nih.gov/21118553/). 
-
+rm(Annot.Tops,beta,EWAS.limma,manifest,Top);gc()
 
 #'# Introduction to differential variability analysis
 #' see [Phipson and Oshlack. Genome Biol 2014](https://pubmed.ncbi.nlm.nih.gov/25245051/). 
@@ -46,6 +46,7 @@ suppressMessages(library(ChAMP))
 sum(is.na(betas.clean))
 betas.impute = champ.impute(beta=betas.clean, pd=pheno, k=5, ProbeCutoff=0.2, SampleCutoff=0.1)
 betas.impute = betas.impute$beta
+gc()
 
 #' coef parameter in varFit states which columns of design matrix correspond to the intercept and variable of interest
 #' If Beta-values are used, a lofit transformation is performed within the varFit function
@@ -78,7 +79,7 @@ boxplot(cpg1$beta ~ cpg1$smoker, col = c("blue", "red"), outline = F, xlab = 'sm
 boxplot(cpg2$beta ~ cpg2$smoker, col = c("blue", "red"), outline = F, xlab = 'smoking', ylab = 'Beta-value', names = c("non-smoker", "smoker"));points(jitter(cpg1$smoker, amount = 0.1), cpg2$beta, pch = 16)
 
 #' diffVar results may be influenced by outliers
-
+rm(Annot,Annot.Top.diffVar,Top.diffVar,EWAS.diffVar,betas.impute,cpg1,cpg2);gc()
 
 #' Load package for regional analysis "DMRcate"
 #' see [Peters et al. Bioinformatics 2015](https://epigeneticsandchromatin.biomedcentral.com/articles/10.1186/1756-8935-8-6).  
@@ -97,12 +98,6 @@ dmrcoutput.smoking <- dmrcate(myannotation, lambda=1000, C=2)
 results.ranges <- extractRanges(dmrcoutput.smoking, genome = "hg19")
 results.ranges
 
-#'Visualizing the data can help us understand where the region lies 
-#'relative to promoters, CpGs islands or enhancers
-
-#' Let's extract the genomic ranges and annotate to the genome
-results.ranges <- extractRanges(dmrcoutput.smoking, genome = "hg19")
-
 #' Plot the DMR using the Gviz
 
 #' if you are interested in plotting genomic data the Gviz is extremely useful
@@ -114,17 +109,14 @@ pheno$smoker<-as.factor(pheno$smoker)
 cols = c("magenta","red")[pheno$smoker]
 names(cols) = levels(pheno$smoker)[pheno$smoker]
 
-#'Draw the plot for a  DMR in\
-#+ fig.width=8, fig.height=6, dpi=300
-DMR.plot(ranges=results.ranges, dmr=2, CpGs=betas.clean, phen.col=cols, what = "Beta",
-         arraytype = "450K", pch=16, toscale=TRUE, plotmedians=TRUE, 
-         genome="hg19", samps=1:nrow(pheno))
-
-#'Draw the plot for another DMR\
+#'Draw the plot a DMR\
 #+ fig.width=8, fig.height=6, dpi=300
 DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "Beta",
          arraytype = "450K", pch=16, toscale=TRUE, plotmedians=TRUE, 
          genome="hg19", samps=1:nrow(pheno))
+
+#'Clean data
+rm(dmrcoutput.smoking,myannotation,results.ranges);gc()
 
 
 #'# Predicting smoking with EpiSmokEr
@@ -132,14 +124,14 @@ DMR.plot(ranges=results.ranges, dmr=1, CpGs=betas.clean, phen.col=cols, what = "
 suppressMessages(require(EpiSmokEr))
 # Make sure rows of pheno match betas column names
 rownames(pheno)<-pheno$gsm
-identical(colnames(beta),rownames(pheno))
+identical(colnames(betas.clean),rownames(pheno))
 
 # pheno needs a column for sex,in the format of 1 and 2 representing men and women respectively
 pheno$sex<-ifelse(pheno$sex=="m",1,2)
 # 121 CpGs are used selected by LASSO along with Sex to get 3 categories (current, former and never smokers)
-result <- epismoker(dataset=beta, samplesheet = pheno, method = "SSt")
+result <- epismoker(dataset=betas.clean, samplesheet = pheno, method = "SSt")
 # Let's look how well the prediction performed
 table(pheno$smoker,result$PredictedSmokingStatus)
-
+rm(list = ls());gc()
 
 #' End of script 05
